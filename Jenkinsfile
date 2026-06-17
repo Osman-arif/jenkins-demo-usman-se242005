@@ -15,14 +15,14 @@ pipeline{
 
 		stage('test') {
 			steps{
-				echo'Test passed!'
+				echo 'Test passed!'
 			}
 		
 		}
 		stage('deploy') {
 
 			steps{
-				sh 'docker build -t jekins-demo .'
+				sh 'docker build -t jenkins-demo .'
 				echo 'deployed!'
 
 			}
