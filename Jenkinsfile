@@ -2,7 +2,7 @@ pipeline{
 	agent any
 	stages {
 		stage('checkout') {
-			step{
+			steps{
 				checkout scm
 			}
 		}
@@ -15,7 +15,7 @@ pipeline{
 
 		stage('test') {
 			steps{
-				echo'Test passed!'
+				echo 'Test passed!'
 			}
 		
 		}
