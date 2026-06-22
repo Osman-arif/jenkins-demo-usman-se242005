@@ -1,38 +1,45 @@
-pipeline{
-	agent any
-	stages {
-		stage('checkout') {
-			steps{
-				checkout scm
-			}
-		}
-		stage('build') {
-			steps{
-				echo "building .."
-				sh "node --version"
-			}
-		}
+pipeline {
+    agent any
 
-		stage('test') {
-			steps{
-				echo 'Test passed!'
-			}
-		
-		}
-		stage('deploy') {
+    environment {
+        DOCKER_IMAGE = "osmanarif/jenkins-demo"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
 
-			steps{
-				sh 'docker build -t jekins-demo .'
-				echo 'deployed!'
+    stages {
 
-			}
-		}
-	}
-	
-	post{
-		success { echo "success" }
-		failure {echo "failed" }
-	
-	}
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t $DOCKER_IMAGE:$IMAGE_TAG .'
+                sh 'docker tag $DOCKER_IMAGE:$IMAGE_TAG $DOCKER_IMAGE:latest'
+            }
+        }
 
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: '7169',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                    sh 'docker push $DOCKER_IMAGE:$IMAGE_TAG'
+                    sh 'docker push $DOCKER_IMAGE:latest'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'docker stop jenkins-demo || true'
+                sh 'docker rm jenkins-demo || true'
+                sh 'docker pull $DOCKER_IMAGE:latest'
+                sh '''docker run -d \
+                    -p 3000:3000 \
+                    --name jenkins-demo \
+                    $DOCKER_IMAGE:latest'''
+                echo 'App deployed at http://localhost:3000'
+            }
+        }
+    }
 }
+
